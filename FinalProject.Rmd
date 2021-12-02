@@ -1,0 +1,46 @@
+---
+title: "FinalProject"
+author: "Faigah, Laila, Mrayam, Raghad"
+date: "27/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+###Project Name: Analyzing the Impact of a Country’s Economic Growth on Unemployment as Opposed to Other Factors and Their Effect
+
+# Packages
+
+```{r load-packages, message = FALSE}
+library(tidyverse)
+#library(randomForest)
+library(dplyr)
+#library(tseries)
+library(ggplot2)
+#library(imputeTS)
+#library(forecast)
+```
+
+# Data
+
+```{r load-data, message = FALSE}
+lego <- read_csv("data/lego.csv")
+```
+
+
+```{r cars}
+summary(cars)
+```
+
+# Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+hello
