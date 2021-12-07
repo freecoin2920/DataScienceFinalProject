@@ -29,7 +29,7 @@ library(ggplot2)
 ```{r load-data, message = FALSE}
 NetExports <- read_csv("NetExports.csv")
 InflationRates<-read_csv("InflationRates.csv")
-UnemploymentRates<-read_csv("UnemploymentRates.csv")
+UnemploymentRates<-read_excel("unemployment1.xlsx")
 CurrencyExchangeRates<-read_csv("CurrencyExchangeRates.csv")
 GDPX<-read_excel("GDP.xls")
 ```
@@ -127,3 +127,4 @@ str(data1)
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 hellohellohellohellohellohellohello
+hihihihihihihihihi
