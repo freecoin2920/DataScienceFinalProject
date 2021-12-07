@@ -29,10 +29,9 @@ library(ggplot2)
 ```{r load-data, message = FALSE}
 NetExports <- read_csv("NetExports.csv")
 InflationRates<-read_csv("InflationRates.csv")
-GDP<-read_csv("GDP.csv")
 UnemploymentRates<-read_csv("UnemploymentRates.csv")
 CurrencyExchangeRates<-read_csv("CurrencyExchangeRates.csv")
-GDPX<-read_excel("GDP.xlsx")
+GDPX<-read_excel("GDP.xls")
 ```
 
 # Merging Data
