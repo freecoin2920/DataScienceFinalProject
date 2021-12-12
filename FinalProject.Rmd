@@ -4,7 +4,7 @@ author: "Faigah, Laila, Mrayam, Raghad"
 date: "27/11/2021"
 output: html_document
 editor_options: 
-  chunk_output_type: console
+chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -16,12 +16,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r load-packages, message = FALSE}
 library(tidyverse)
-#library(randomForest)
 library(dplyr)
-#library(tseries)
 library(ggplot2)
-#library(imputeTS)
-#library(forecast)
+install.packages(arsenal)
+install.packages("caret")
+library(caret)
+install.packages("RANN")
+library(RANN)  # required for knnImpute
+library(ada)
+install.packages("ada")
 ```
 
 # Data
@@ -29,31 +32,35 @@ library(ggplot2)
 ```{r load-data, message = FALSE}
 NetExports <- read_csv("NetExports.csv")
 InflationRates<-read_csv("InflationRates.csv")
-UnemploymentRates<-read_excel("unemployment1.xlsx")
 CurrencyExchangeRates<-read_csv("CurrencyExchangeRates.csv")
+unemploymentRate<-read_csv("unemploymentRate.csv")
+ExchangeRate<-read_csv("ExchangeRate.csv")
 GDPX<-read_excel("GDP.xls")
-```
-
-# Merging Data
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
 ##Discriptive Analysis
 
-```{r hello}
-View(data)
-str(data)
-boxplot(GDPX$`Data Source`)
+#Ex-1
 
+Which country's exchange rate was impacted the most tdue to the us great recessionthrough 2007-2009, which country was least impacted? how did unemployment look in both countries? was there a relationship?
+
+```{r Ex-1}
+exchange_greatRec_high <- ExchangeRate%>% group_by(LOCATION) %>% filter(TIME==2009)%>% summarize(max=max(Value)) %>% arrange(desc(max)) %>%
+slice(1, n()) 
+
+exchange_pre_greatRec <- ExchangeRate[c(1,6,7)] %>% 
+filter(LOCATION=='IDN'| LOCATION=='GBR', TIME == 2006)
+
+  
 ```
 
-#Handling Missing Values
+#Ex-2 OCED members in unemployment (Was the NetExports affected by the unemplyment rates in OCED countries? 1. we have to filter the OCED countires in unemplyment 2. Using a Graph check how netexports was affected.
 
-```{r}
-data1<-na.omit(data)
-str(data1)
+```{r ex-2}
+
+OECD_exp_unemp <- NetExports %>% 
+
+
 
 ```
 
@@ -62,69 +69,104 @@ str(data1)
 #We Can use Naive Bayes,SVM, Decision Tree and Random Forest and test the best accuracy
 
 ```{r}
-#1. Naive Bayes----------71.49% Accuracy
-naive_bayes<-naiveBayes(Recommendation~.,data = data1)
-summary(naive_bayes)
 
-Predictions<-predict(naive_bayes,data1)
-Predictions
-table(Predictions,data1$Recommendation)
-
-#Accuracy of Model
-table_mat<-table(Predictions,data1$Recommendation)
-accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
-accuracy_Test
-
-#2. Support Vector Machine-------63.51% Accuracy
-svms<-svm(Recommendation~.,data = data1,method = 'class')
-summary(svms)
-
-Predictions<-predict(svms,data1,type='class')
-Predictions
-table(Predictions,data1$Recommendation)
-
-#Accuracy of Model
-table_mat<-table(Predictions,data1$Recommendation)
-accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
-accuracy_Test
-
-#3. Decision Tree---------79.44% Acuraccy
-tree<-rpart(Recommendation~.,data = data1,method = 'class')
-summary(tree)
-
-Predictions<-predict(tree,data1,type = 'class')
-Predictions
-table(Predictions,data1$Recommendation)
-
-#Accuracy of Model
-table_mat<-table(Predictions,data1$Recommendation)
-accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
-accuracy_Test
-
-#4. Random Forest---------100% Accuracy
-forest<-randomForest(x = data1, y = data1$Recommendation,ntree =800)# build model
-summary(forest)
-
-Predictions<-predict(forest,data1)
-Predictions
-table(Predictions,data1$Recommendation)
-
-#Accuracy of Model
-table_mat<-table(Predictions,data1$Recommendation)
-accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
-accuracy_Test
-
-
+#Handling Missing Values
+CER<-na.omit(ExchangeRate)
+str(CER)
 ```
 
-#Time Series Analysis using ARIMA
+# Data Preparation and Preprocessing
 
-```{r}
-data1<-na.omit(data)
-str(data1)
+```{r, echo=FALSE}
+# Step 1: Get row numbers for the training data
+trainRowNumbers <- createDataPartition(CER$'LOCATION', p=0.8, list=FALSE)
+
+# Step 2: Create the training  dataset
+trainData <- CER[trainRowNumbers,]
+
+# Step 3: Create the test dataset
+testData <- CER[-trainRowNumbers,]
+
+# Store X and Y for later use.
+x = trainData[, 2:18]
+y = trainData$'Saudi Arabian Riyal'
+
+# Create the knn imputation model on the training data
+CERKNN <- preProcess(trainData, method='knnImpute')
+CERKNN #knn imputation acheived 
+
+
+# Use the imputation model to predict the values of missing data points
+trainData <- predict(CERKNN, newdata = trainData)
+anyNA(trainData)
+
+#One-Hot Encoding 
+dummies_model <- dummyVars( `Saudi Arabian Riyal`~ ., data=trainData)
+
+trainData_mat <- predict(dummies_model, newdata = trainData)
+
+trainData <- data.frame(trainData_mat)
+
+str(trainData)
+
+#Feature Selection Using Recursive Feature Elimination 
+
+#We built a ML model on a training dataset and estimate the feature importance on the test dataset while keeping priority to the most important variables, iterate through by building models of given subset sizes, that is, subgroups of most important predictors determined from step 1. Ranking of the predictors is recalculated in each iteration and show the model performances are compared across different subset sizes to arrive at the optimal number and list of final predictors.
+
+ctrl <- rfeControl(functions = rfFuncs,
+                   method = "repeatedcv",
+                   repeats = 5,
+                   verbose = FALSE)
+
+#To know what models caret supports, we ran the following:
+modelnames <- paste(names(getModelInfo()), collapse=',  ')
+modelnames
+```
+
+
+#Selecting a Machine Learning Model
+
+```{r load-data, message = FALSE}
+
+# Train the model using randomForest and predict on the training data itself.
+model_CER = train(Date2018.4.4 ~ ., data=trainData, method='null')
+fitted <- predict(model_CER)
+model_CER
+
+#Prepare the test dataset and predict
+# Step 1: Impute missing values 
+testData2 <- predict(CERKNN, testData)  
+
+# Step 2: Create one-hot encodings (dummy variables)
+testData3 <- predict(dummies_model, testData2)
+
+# Step 3: View
+head(testData3[, 1:10])
+
+# Train the model using adaboost
+model_adaboost = train(Date2018.4.4 ~ ., data=trainData, method='adaboost', tuneLength=2, trControl = fitControl)
+ymodel_adaboost
+
+# Train the model using rf
+model_rf = train(Date2018.4.4 ~ ., data=trainData, method='rf', tuneLength=5, trControl = fitControl)
+model_rf
+
+# Train the model using CER
+model_xgbDART = train(Date2018.4.4 ~ ., data=trainData, method='xgbDART', tuneLength=5, trControl = fitControl, verbose=F)
+model_xgbDART
+
+# Train the model using CER
+model_svmRadial = train(Date2018.4.4 ~ ., data=trainData, method='svmRadial', tuneLength=15, trControl = fitControl)
+model_svmRadial
+
+# Compare model performances using resample()
+models_compare <- resamples(list(ADABOOST=model_adaboost, RF=model_rf, XGBDART=model_xgbDART, MARS=model_mars3, SVM=model_svmRadial))
+
+# Summary of the models performances
+summary(models_compare)
+
+```
 
 ```
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-hellohellohellohellohellohellohello
-hihihihihihihihihi
