@@ -42,7 +42,7 @@ library(readr)
 NetExports <- read_csv("NetExports.csv")
 InflationRates<-read_csv("InflationRates.csv")
 CurrencyExchangeRates<-read_csv("CurrencyExchangeRates.csv")
-unemploymentRate<-read_csv("unemploymentRate.csv")
+unemploymentRate <- read_csv("unemploymentRate.csv")
 ExchangeRate<-read_csv("ExchangeRate.csv")
 GDP<-read_excel("GDP.xls")
 
@@ -86,7 +86,7 @@ OECD_exp <- NetExports[c(1,3,4,6,7)] %>% filter(TIME>=1995, Country == "OECD", S
 # filter Country=='OECD'
 oecd_unemployment <-unemploymentRate[c(1,3,4)] %>% filter( Year>=1995) %>% filter(Country == 'OECD')
 
-OECD_compare <- inner_join(oecd_unemployment,OECD_netTrade, by = "Year")
+OECD_compare <- inner_join(oecd_unemployment,OECD_exp, by = "Year")
 
 ggplot(OECD_compare,
        mapping =aes(x=net_Trade, y=Year, size = Unemployment))+
@@ -94,7 +94,6 @@ ggplot(OECD_compare,
   labs(x = "Exports", y = "Year",
        size = "Unemployment",
        title = "Relationship between Unemployment and exports of OECD countries")
-
 ```
 
 #Ex-3 In 1980, 1998, and 2019, the world showed the most inflation rates, is it correlated with GDP?
@@ -144,11 +143,11 @@ str(CER)
 #Build Regression Model
 
 ```{r}
-#regression <-lm(GDP$'2020'~unemploymentRate$'2020')
-#regression
-#summary(regression)
-#Predictions<-predict(regression,unemploymentRate)
-#Predictions
+regression <-lm(GDP$'2020'~unemploymentRate$'2020')
+regression
+summary(regression)
+Predictions<-predict(regression,unemploymentRate)
+Predictions
 ```
 # Data Preparation and Preprocessing
 
