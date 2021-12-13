@@ -239,6 +239,8 @@ models_compare <- resamples(list(ADABOOST=model_adaboost, RF=model_rf, XGBDART=m
 # Summary of the models performances
 summary(models_compare)
 
+hihihihihihi
+
 ```
 
 ```
